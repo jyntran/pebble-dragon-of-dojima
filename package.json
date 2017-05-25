@@ -1,6 +1,6 @@
 {
   "name": "dragon-of-dojima",
-  "author": "MakeAwesomeHappen",
+  "author": "jyntran",
   "version": "1.0.0",
   "keywords": ["pebble-app"],
   "private": true,
@@ -17,13 +17,19 @@
       "diorite"
     ],
     "watchapp": {
-      "watchface": false
+      "watchface": true
     },
     "messageKeys": [
       "dummy"
     ],
     "resources": {
-      "media": []
+      "media": [
+          {
+          "type": "bitmap",
+          "name": "BACKGROUND_IMAGE",
+          "file": "bg.png"
+        }
+      ]
     }
   }
 }
