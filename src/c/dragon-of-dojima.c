@@ -12,7 +12,7 @@ static Layer *s_bg_layer;
 static GPath *s_hour_hand, *s_minute_hand;
 static Layer *s_hands_layer;
 
-static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed) {
+static void handle_second_tick(struct tm *tick_time, TimeUnits units_changed) {
   layer_mark_dirty(s_hands_layer);
 }
 
@@ -60,23 +60,37 @@ static void hands_update_proc(Layer *layer, GContext *ctx) {
   struct tm *t = localtime(&now);
   
   GRect bounds = layer_get_bounds(layer);
+  GPoint center = grect_center_point(&bounds);
+
+  /* Create second hand */
+  int16_t second_hand_length = bounds.size.w / 2 - 5;
+
+  int32_t second_angle = TRIG_MAX_ANGLE * t->tm_sec / 60;
+  GPoint second_hand = {
+    .x = (int16_t)(sin_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.x,
+    .y = (int16_t)(-cos_lookup(second_angle) * (int32_t)second_hand_length / TRIG_MAX_RATIO) + center.y,
+  };
 
   /* Hour hand */
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_rotate_to(s_hour_hand, (TRIG_MAX_ANGLE * (((t->tm_hour % 12) * 6) + (t->tm_min / 10))) / (12 * 6));
   gpath_draw_filled(ctx, s_hour_hand);
 
   /* Minute hand */
-  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_context_set_fill_color(ctx, GColorBlack);
   gpath_rotate_to(s_minute_hand, TRIG_MAX_ANGLE * t->tm_min / 60);
   gpath_draw_filled(ctx, s_minute_hand);
 
   /* Centre dot */
   graphics_context_set_fill_color(ctx, GColorBlack);
+  graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 2), 4);
+  graphics_context_set_fill_color(ctx, GColorRed);
+  graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 2), 2);
+
+  /* Second hand */
   graphics_context_set_stroke_color(ctx, GColorRed);
   graphics_context_set_stroke_width(ctx, 1);
-  graphics_fill_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 2), 4);
-  graphics_draw_circle(ctx, GPoint(bounds.size.w / 2, bounds.size.h / 2), 4);
+  graphics_draw_line(ctx, second_hand, center);
 }
 
 static void prv_window_load(Window *window) {
@@ -120,7 +134,7 @@ static void prv_init(void) {
   const bool animated = true;
   window_stack_push(s_window, animated);
 
-  tick_timer_service_subscribe(MINUTE_UNIT, handle_minute_tick);
+  tick_timer_service_subscribe(SECOND_UNIT, handle_second_tick);
 }
 
 static void prv_deinit(void) {
